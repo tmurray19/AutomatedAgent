@@ -1,0 +1,37 @@
+0,HI,*,*,<random>#Newline                <li>Hello!</li>#Newline                <li>Hi There! How can I help you today?</li>#Newline                <li>Hello! Are you having trouble with anything?</li>#Newline                <li>How are you? What can I help you with today?</li>#Newline                <li>Is there anything I can help you with?</li>#Newline            </random>,boilerplate.aiml
+0,HI *,*,*,<srai> HI </srai>,boilerplate.aiml
+0,* HI *,*,*,<srai> HI </srai>,boilerplate.aiml
+0,HELLO,*,*,<srai> HI </srai>,boilerplate.aiml
+0,HELLO *,*,*,<srai>HI</srai>,boilerplate.aiml
+0,* HELLO *,*,*,<srai> HI </srai>,boilerplate.aiml
+0,BYE,*,*,<random>#Newline                <li>Goodbye.</li>#Newline                <li>Thank you very much! Bye.</li>#Newline                <li>Goodbye! Glad to have helped you.</li>#Newline                <li>I hope we helped you as best we could.</li>#Newline                <li>Have a wonderful day.</li>#Newline            </random>,boilerplate.aiml
+0,GOODBYE,*,*,<srai> BYE </srai>,boilerplate.aiml
+0,GOODBYE *,*,*,<srai> BYE </srai>,boilerplate.aiml
+0,* GOODBYE,*,*,<srai> BYE </srai>,boilerplate.aiml
+0,* GOODBYE *,*,*,<srai> BYE </srai>,boilerplate.aiml
+0,BYE *,*,*,<srai> BYE </srai>,boilerplate.aiml
+0,* BYE *,*,*,<srai> BYE </srai>,boilerplate.aiml
+0,FAREWELL,*,*,<srai> BYE </srai>,boilerplate.aiml
+0,HELP,*,*,<random>#Newline                <li>It seem's you're having trouble with something. Can you describe your issue.</li>#Newline                <li>I'm sorry to hear that. Please describe your issue in greater detail.</li>#Newline                <li>Let's see if we can help you. Please describe your issue in greater detail</li>#Newline            </random>,boilerplate.aiml
+0,* HELP *,*,*,<srai>HELP</srai>,boilerplate.aiml
+0,HELP *,*,*,<srai> HELP </srai>,boilerplate.aiml
+0,ISSUE,*,*,<srai> HELP </srai>,boilerplate.aiml
+0,* ISSUE,*,*,<srai> HELP </srai>,boilerplate.aiml
+0,ISSUE *,*,*,<srai> HELP </srai>,boilerplate.aiml
+0,* ISSUE *,*,*,<srai> HELP </srai>,boilerplate.aiml
+0,TROUBLE,*,*,<srai> HELP </srai>,boilerplate.aiml
+0,TROUBLE *,*,*,<srai> HELP </srai>,boilerplate.aiml
+0,* TROUBLE,*,*,<srai> HELP </srai>,boilerplate.aiml
+0,* TROUBLE *,*,*,<srai> HELP </srai>,boilerplate.aiml
+0,ISSUES,*,*,<srai> HELP </srai>,boilerplate.aiml
+0,* ISSUES,*,*,<srai> HELP </srai>,boilerplate.aiml
+0,ISSUES *,*,*,<srai> HELP </srai>,boilerplate.aiml
+0,* ISSUES *,*,*,<srai> HELP </srai>,boilerplate.aiml
+0,UNABLE,*,*,<random>#Newline                <li>I can't seem to find a solution for your issue. Would you like to talk to a representative?</li>#Newline                <li>There doesn't seem to be anything available for your issue. Do you want to connect to an Agent?</li>#Newline            </random>,boilerplate.aiml
+0,UNABLE *,*,*,<srai> UNABLE </srai>,boilerplate.aiml
+0,* UNABLE,*,*,<srai> UNABLE </srai>,boilerplate.aiml
+0,* UNABLE *,*,*,<srai> UNABLE </srai>,boilerplate.aiml
+0,CAN NOT,*,*,<srai> UNABLE </srai>,boilerplate.aiml
+0,CAN NOT *,*,*,<srai> UNABLE </srai>,boilerplate.aiml
+0,* CAN NOT,*,*,<srai> UNABLE </srai>,boilerplate.aiml
+0,* CAN NOT *,*,*,<srai> UNABLE </srai>,boilerplate.aiml

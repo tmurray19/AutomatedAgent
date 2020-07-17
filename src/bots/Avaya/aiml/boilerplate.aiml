@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- File: boilerplate.aiml -->
+<!-- Taidgh Murray for Avaya Automated Agent Integration -->
+<!-- Last modified: February 17, 2020 -->
+<!-- This file will contain boilerplate responses -->
+<!-- This will mostly be greetings, farewells -->
+<!-- Anything that can be more hard coded than trying to get responses to issues -->
+<aiml>
+    <!-- Greetings -->
+    <category>
+        <pattern> HI </pattern>
+        <template>
+            <random>
+                <li>Hello!</li>
+                <li>Hi There! How can I help you today?</li>
+                <li>Hello! Are you having trouble with anything?</li>
+                <li>How are you? What can I help you with today?</li>
+                <li>Is there anything I can help you with?</li>
+            </random>
+        </template>
+    </category>
+
+    <category>
+        <pattern> HI * </pattern>
+        <template>
+            <srai> HI </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> * HI * </pattern>
+        <template>
+            <srai> HI </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> HELLO </pattern>
+        <template>
+            <srai> HI </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> HELLO * </pattern>
+        <template>
+            <srai>HI</srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> * HELLO * </pattern>
+        <template>
+            <srai> HI </srai>
+        </template>
+    </category>
+
+
+    <category>
+        <pattern> BYE </pattern>
+        <template>
+            <random>
+                <li>Goodbye.</li>
+                <li>Thank you very much! Bye.</li>
+                <li>Goodbye! Glad to have helped you.</li>
+                <li>I hope we helped you as best we could.</li>
+                <li>Have a wonderful day.</li>
+            </random>
+        </template>
+    </category>
+
+    <category>
+        <pattern> GOODBYE </pattern>
+        <template>
+            <srai> BYE </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> GOODBYE * </pattern>
+        <template>
+            <srai> BYE </srai>
+        </template>
+    </category>
+
+
+    <category>
+        <pattern> * GOODBYE </pattern>
+        <template>
+            <srai> BYE </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> * GOODBYE * </pattern>
+        <template>
+            <srai> BYE </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> BYE * </pattern>
+        <template>
+            <srai> BYE </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> * BYE * </pattern>
+        <template>
+            <srai> BYE </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> FAREWEll </pattern>
+        <template>
+            <srai> BYE </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> HELP </pattern>
+        <template>
+            <random>
+                <li>It seems you're having trouble with something. Can you describe your issue.</li>
+                <li>I'm sorry to hear that. Please describe your issue in greater detail.</li>
+                <li>Let's see if we can help you. Please describe your issue in greater detail</li>
+            </random>
+        </template>
+    </category>
+
+    <category>
+        <pattern> * HELP * </pattern>
+        <template>
+            <srai>HELP</srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> HELP * </pattern>
+        <template>
+            <srai> HELP </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> ISSUE </pattern>
+        <template>
+            <srai> HELP </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> * ISSUE </pattern>
+        <template>
+            <srai> HELP </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> ISSUE * </pattern>
+        <template>
+            <srai> HELP </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> * ISSUE * </pattern>
+        <template>
+            <srai> HELP </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> TROUBLE </pattern>
+        <template>
+            <srai> HELP </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> TROUBLE * </pattern>
+        <template>
+            <srai> HELP </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> * TROUBLE </pattern>
+        <template>
+            <srai> HELP </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> * TROUBLE * </pattern>
+        <template>
+            <srai> HELP </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> ISSUES </pattern>
+        <template>
+            <srai> HELP </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> * ISSUES </pattern>
+        <template>
+            <srai> HELP </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> ISSUES * </pattern>
+        <template>
+            <srai> HELP </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> * ISSUES * </pattern>
+        <template>
+            <srai> HELP </srai>
+        </template>
+    </category>
+
+
+
+    <category>
+        <pattern> UNABLE </pattern>
+        <template>
+            <random>
+                <li>I can't seem to find a solution for your issue. Would you like to talk to a representative?</li>
+                <li>There doesn't seem to be anything available for your issue. Do you want to connect to an Agent?</li>
+            </random>
+        </template>
+    </category>
+
+    <category>
+        <pattern> UNABLE * </pattern>
+        <template>
+            <srai> UNABLE </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> * UNABLE </pattern>
+        <template>
+            <srai> UNABLE </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> * UNABLE * </pattern>
+        <template>
+            <srai> UNABLE </srai>
+        </template>
+    </category>
+
+
+    <category>
+        <pattern> CAN NOT </pattern>
+        <template>
+            <srai> UNABLE </srai>
+        </template>
+    </category>
+
+
+    <category>
+        <pattern> CAN NOT * </pattern>
+        <template>
+            <srai> UNABLE </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> * CAN NOT </pattern>
+        <template>
+            <srai> UNABLE </srai>
+        </template>
+    </category>
+
+    <category>
+        <pattern> * CAN NOT * </pattern>
+        <template>
+            <srai> UNABLE </srai>
+        </template>
+    </category>
+
+</aiml>
