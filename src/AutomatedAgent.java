@@ -1,12 +1,7 @@
 import com.avaya.ccs.api.*;
+import com.avaya.ccs.api.enums.*;
 import com.avaya.ccs.api.exceptions.ObjectInvalidException;
 import com.avaya.ccs.core.*;
-import com.avaya.ccs.api.enums.ClientState;
-import com.avaya.ccs.api.enums.ContactType;
-import com.avaya.ccs.api.enums.DestinationType;
-import com.avaya.ccs.api.enums.InteractionState;
-import com.avaya.ccs.api.enums.NotificationType;
-import com.avaya.ccs.api.enums.Profile;
 import com.avaya.ccs.api.exceptions.InvalidArgumentException;
 import com.avaya.ccs.api.exceptions.InvalidStateException;
 
@@ -25,9 +20,13 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 
+
+import org.json.JSONObject;
+
+
 class AutomatedAgent {
 
-    final Logger LOG = Logger.getLogger(AutomatedAgent.class);
+	final Logger LOG = Logger.getLogger(AutomatedAgent.class);
 
     // Declaration of variables
     UserI u = null;
@@ -64,31 +63,53 @@ class AutomatedAgent {
     ClientListenerI avayaClientListener = clientEvent -> {
     	// Notifies Java Client of incoming CCS client updates
         System.out.println("Client event found: " + clientEvent);
-        LOG.info("Client event found");
+        LOG.info("AvayaClientListener", new Object[]{"Client event found: " + clientEvent});
+        getCcsServerInfo();
     };
 
     UserListenerI avayaUserListener = userEvent -> {
     	// Notifies Java Client of incoming CCS user updates
+
+		// Look for agentLogin return
+		// call ready function here
+
+		System.out.println("User response data:"  + userEvent.getResponseData());
         System.out.println("User event found: " + userEvent);
-    };
+
+        LOG.info("AvayaUserListener", new Object[]{"User event found: " + userEvent});
+
+        // Update local user instance
+		try {
+			setUser(client.getSession().findUser(properties.getProperty("agentID")));
+		} catch (InvalidArgumentException e) {
+			e.printStackTrace();
+		} catch (ObjectInvalidException e) {
+			e.printStackTrace();
+		}
+	};
 
     // This sends information from the session to the server
     // These listeners need to be set up correctly
     SessionListenerI avayaSessionListener = sessionEvent -> {	
     	// This automatically updates the local declaration of the session with the instance sent to the client by the CCS Server
         System.out.println("Session event found - updating session accordingly");
+        LOG.info("AvayaUserListener", new Object[]{"Session event found - updating session accordingly"}); 
         setSession(getClient().getSession());
     };
 
     ResourceListenerI avayaResourceListener = resourceEvent -> {
         System.out.println("Resource event found: " + resourceEvent);
+        LOG.info("AvayResourceListener", new Object[]{"Resource event found: " + resourceEvent});
     };
 
     CustomerListenerI avayaCustomerListener = nei -> {
     	System.out.println("Customer event found: " + nei);
+    	LOG.info("AvayaCustomerListener", new Object[]{"Customer event found: " + nei});
     };
     
     // These interaction listener functions are used to update the local instances of their respective objects
+
+	// Call answerCall function then
     InteractionListenerI avayaInteractionListener = new InteractionListenerI() {
     	// This handles any interaction events
         @Override
@@ -97,24 +118,39 @@ class AutomatedAgent {
         	// With the incoming list
         	if(interactionEvent.getResponseData() instanceof DestinationListI) {
         		System.out.println("Destination list received, updating local instance");
+        		LOG.info("AvayaInteractionListener - onInteractionEvent", new Object[]{"Destination list received, updating local instance"});
         		setConsultantDestinations((DestinationListI) interactionEvent.getResponseData());
         	}
         	// Otherwise, we want to update the local Interaction object instead
+			//TODO: LaunchState=ALERTING
         	else {
 	            System.out.println("Interaction event found - attempting to update Interaction object");
-	            System.out.println(interactionEvent);
+        		LOG.info("AvayaInteractionListener - onInteractionEvent", new Object[]{"Interaction event found - attempting to update Interaction object"});
+        		System.out.println("Interaction event: " + interactionEvent);
 	            // null local instance if a delete notification is sent in
 	            if(interactionEvent.getNotificationType()== NotificationType.DELETE) {
 	            	System.out.println("Interaction deleted");
+	            	LOG.info("AvayaInteractionListener - onInteractionEvent", new Object[]{"Interaction Deleted"});
 	            	//setInteraction(null);
 	            }
 	            try {
 	            	// Get the interaction from the setting, and assign it to the local variable
-	                setInteraction(getSession().getInteractions().get(0));
+	                LOG.debug("AvayaInteractionListener - onInteractionEvent", new Object[]{"Assigning interaction locally..."});
+	                System.out.println("Assigning interaction...");
+	            	setInteraction(getSession().getInteractions().get(0));
+	            	// TODO: Look at right interaction state
+					// If an incoming interaction has an 'Active' or
+					answerWebChat();
+	            	if (getInteraction().getState() == InteractionState.Active){
+	            		System.out.println("Interaction is ringing, attempting to answer");
+	            		answerWebChat();
+					}
 	            } catch (ObjectInvalidException e) {
 	                e.printStackTrace();
 	            } catch (NullPointerException e){
 	                System.out.println("No Interaction found in the session");
+	            	LOG.info("AvayaInteractionListener - onInteractionEvent", new Object[]{"No Interaction found in the session"});
+
 	            }
         	}
         }
@@ -123,9 +159,11 @@ class AutomatedAgent {
         public void onInteractionMediaEvent(NotificationEventI<? extends MediaI> nei) {
             System.out.println("Interaction media event found:" + nei);
             // We want to update the local web chat instance only if we get one incoming
+			//TODO: Answering webchat here
             if(nei.getNotificationObject().getContactType() == ContactType.Web_Communications){
             	System.out.println("Incoming web communication, updating media class");
             	setChat((WebChatMedia) getInteraction().getMedia());
+            	answerWebChat();
             }
         }
     };
@@ -141,20 +179,9 @@ class AutomatedAgent {
     	}
     }
 
-
-    //TODO: Implement a new Automated Agent
-    //TODO: This bot is now depreciated
-    // Rasa is now the default bot solution
-    public void createBot(){
-        // Create a new bot
-        bot = new AvayaAliceBot();
-        // Bot needs to be named "Avaya" to get access to memory
-        bot.createBot("Avaya");
-        // Set up a chat session for the bot
-        bot.createChatSession();
-    }
-
     public void clientDance(){
+    	int counter = 0;
+    	// Create a new client and log it into the ccs server
     	// Create a new instance of the client
         setClient(
                 Client.create(
@@ -164,25 +191,40 @@ class AutomatedAgent {
                         null
                 )
         );
+        System.out.println("Initial client state: " + getClient().getState());
         // Continue to try and sign in the client until it is authenticated
         while(getClient().getState() != ClientState.AUTHENTICATED) {
 	        try {
+	        	counter++;
 	            getClient().signin(
 	            		properties.getProperty("clientID"),
 	            		properties.getProperty("clientPassword"),
 	                    avayaSessionListener,
 	                    avayaClientListener
 	            );
-	            TimeUnit.SECONDS.sleep(4);
+	            TimeUnit.SECONDS.sleep(5);
+	            LOG.debug("ClientDance", new Object[]{"Client is now: " + getClient().getState()});
 	            System.out.println("Client is now: " + getClient().getState());
 	        } catch (InvalidArgumentException e) {
 	            e.printStackTrace();
 	        } catch (InvalidStateException e) {
 	            e.printStackTrace();
-	        } catch (InterruptedException e) {
-	            e.printStackTrace();
-	        }
-        }
+	            try{
+	            	TimeUnit.SECONDS.sleep(5);
+				} catch (InterruptedException ex) {
+					ex.printStackTrace();
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} finally {
+	        	if (counter > 10){
+	        		System.out.println("Error: maximum connection attempts reached, exiting program");
+					LOG.error("ClientDance", new Object[]{"Error: maximum connection attempts reached, exiting program"});
+
+					System.exit(0);
+				}
+			}
+		}
     }
 
     public void getCcsServerInfo() {
@@ -213,72 +255,105 @@ class AutomatedAgent {
     // Get a User class from the CCS Server and attempts to log it into the server
     public void userDance() {
         try {
-        	// Get the first user associated with the 
-            u = client.getSession().getUsers().get(0);
-            // login the user 
-            u.login(properties.getProperty("agentPassword"), null);
-            TimeUnit.SECONDS.sleep(2);
-            // Ready the user
-            u.ready();
-        } catch (ObjectInvalidException e) {
+        	// Get the user associated with the agent ID
+            setUser(client.getSession().findUser(properties.getProperty("agentID")));
+			while(getUser().getState() == UserState.LoggedOut) {
+				System.out.println("Logging user in...");
+				getUser().login(properties.getProperty("agentPassword"), null);
+			}
+
+            while( !(getUser().getState().equals(UserState.Ready)) && !(getUser().getState().equals(UserState.ReadyAfterCall))) {
+				System.out.println("User state: " + getUser().getState());
+				System.out.println("User can login: " + getUser().canLogin());
+				// login the user
+				getUser().login(properties.getProperty("agentPassword"), null);
+				TimeUnit.SECONDS.sleep(5);
+				// Ready the user
+				getUser().ready();
+			}
+        }
+        catch (ObjectInvalidException e) {
             e.printStackTrace();
         } catch(InterruptedException e) {
         	e.printStackTrace();
-        }
-    }
+        } catch (InvalidArgumentException e) {
+			e.printStackTrace();
+		}
+	}
 
     public void answerWebChat() {
+    	// Attempt to answer a call from an incoming customer
     	Boolean transferFlag = false;
+    	//System.out.println("Interaction: " + getInteraction().getState());
     	while(true) {
 	        try {
 	        	// If the interaction can be answered or the state is active, and the transfer flag has not been set
 	            if ((getInteraction().canAnswer() || getInteraction().getState()==InteractionState.Active) && transferFlag==false) {
 		        //if ((getInteraction().canAnswer() && transferFlag==false)) {
 	                // Answer incoming call
-	                getInteraction().answer();
-	                // Open chat for call
-	                getInteraction().openMedia();
-	                // Define info for rasa bot (full name or unique identifier)
-	                // TODO: get information from interaction
-	                String customerName = 
-	    	                getInteraction().getCustomerDetails().getId();
+					getInteraction().answer();
+					System.out.println("Can open media: " + getInteraction().canOpenMedia());
 
-	                while (true) {
-	                	// TODO: Change from checking that message contains transfer
-	                    if(getChat().getMessage().contains("Transfer")) {
-	                    	transferFlag = true;
-	                    	getChat().sendMessage("Ok, transferring you to a human agent...", false);
-	                    	transferCall();
-	                    	TimeUnit.SECONDS.sleep(5);
-	                    	break;
-	                    }
-	                    else {
-		                    System.out.println(getChat().getMessage());
-		                    	
-		                    // Create API post request to rasa bot
-		                    // We create a json body with the username and the message
-		    	            String httpBody =
-		    	            	String.format("{\"name\": \"%s\", \"message\": \"%s\"}", customerName, getChat().getMessage());
-		    	        
-		    	            // We send a message to the chat service
-		    	            getChat().sendMessage(
-		    	            		// Do this through making a json post request to rasa
-		    	            		jsonPostRequest(
-		    	            				properties.getProperty("rasaLocation"),
-		    	            				httpBody
-		    	            				), 
-		    	            		false
-		    	            		);
-		                    //getChat().sendMessage(bot.generateResponse(getChat().getMessage()), false);
-		
-		                    System.out.println("Sleeping...");
-		                    TimeUnit.SECONDS.sleep(4);
-	                    }
+					// While the media can be opened
+					while(!(getInteraction().canOpenMedia())) {
+						getInteraction().getMedia();
+						getCcsServerInfo();
+
+						// Check for media
+						System.out.println("Can open media: " + getInteraction().canOpenMedia());
+						System.out.println("media status: " + getInteraction().getMedia());
+
+
+						// Open chat for call
+						getInteraction().openMedia();
+
+						TimeUnit.SECONDS.sleep(8);
+					}
+					// Define info for rasa bot (full name or unique identifier)
+	                // TODO: get information from interaction
+					// TODO: Get inter
+	                String customerName = getInteraction().getId();
+
+                    String botMessage = "";
+
+
+
+					// If getSenderType == agent, ignore message
+					while(true) {
+						//while (getChat().getSenderType() != WebChatSenderType.agent) {
+						while(true){
+							    // TODO: Change from checking that message contains transfer
+							    if (botMessage.contains("transferring")) {
+							        String skillset = jsonPostRequest(String.format("http://localhost:5005/conversations/%s/story", customerName), "");
+                                    System.out.println("Skillset: " + skillset);
+							        transferFlag = true;
+                                    getChat().sendMessage("Ok, transferring you to a human agent...", false);
+                                    transferCall(skillset);
+                                    TimeUnit.SECONDS.sleep(5);
+                                    break;
+							    }
+							    else {
+							        //System.out.println(getChat().getMessage());
+
+                                    // Create API post request to rasa bot
+                                    // We create a json body with the username and the message
+                                    String httpBody = String.format(
+                                            "{\"name\": \"%s\", \"message\": \"%s\"}",
+                                            customerName,
+                                            getChat().getMessage()
+                                    );
+
+                                    botMessage = jsonPostRequest(properties.getProperty("rasaLocation"), httpBody);
+
+                                    // We send a message to the chat service
+                                    getChat().sendMessage(botMessage, false);
+
+                                    System.out.println("Sleeping...");
+                                    TimeUnit.SECONDS.sleep(4);
+                                }
+    						}
+	    				}
 	                }
-	
-	
-	                //interaction.end();
-	            } 
 	            if (transferFlag == true) {
 	            	System.out.println("Call is being transferred, bot work finished");
 	            	break;
@@ -294,7 +369,7 @@ class AutomatedAgent {
 	        	System.out.println("Invalid object");
 	            e.printStackTrace();
 	            break;
-	        } 
+	        }
 	        catch (NullPointerException e){
 	            System.out.println("No interaction found, retrying in four seconds");
 	            e.printStackTrace();
@@ -308,10 +383,11 @@ class AutomatedAgent {
 	    }
     }
     
-    public void transferCall() {
+    public void transferCall(String skillset) {
     	try {
     		// Gets destinations (potential agents to redirect call to) based on skillset
             interaction.getConsultDestinations(DestinationType.Skillset);
+            System.out.println(getConsultantDestinations().getDestinations());
             // Set the destination locally
             // TODO: current code is getting first consult destination that shows up, needs to change
             setDestination(getConsultantDestinations().getDestinations().get(0));
@@ -334,93 +410,70 @@ class AutomatedAgent {
     		e.printStackTrace();
     	}
     }
-    
-    public String jsonPostRequest(String requestURL, String jsonBody) {
-    	// Declare url 
-    	URL url;
-    	HttpURLConnection conn = null;
-    	try {
-    		url = new URL (requestURL);
-    		// Open connection to url
-    		conn = (HttpURLConnection)url.openConnection();
-    		// Set the request method to send information to the URL
-    		conn.setRequestMethod("POST");
-    		conn.setRequestProperty("Content-Type", "application/json; utf-8");
-    		conn.setRequestProperty("Accept", "application/json");
-    		
-    		// enable requests
-    		conn.setDoOutput(true);
-    		
-    		// write request to url
-    		
-    		OutputStream outStream = conn.getOutputStream();
-    		byte[] input = jsonBody.getBytes("utf-8");
-    		outStream.write(input, 0, input.length);
-    		
-    		BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
-    		StringBuilder resp = new StringBuilder();
-    		String responseLine = null;
-    		while((responseLine = br.readLine()) != null) {
-    			resp.append(responseLine.trim());
-    		}
-    		return(resp.toString());
-    	}
-    	catch(Exception e) {
-    		e.printStackTrace();
-    		return null;
-    	}
-    	finally {
-    		if(conn!= null) {
-    			conn.disconnect();
-    		}
-    	}
-    }
-    
-    public String postRequest(String targetURL, String urlParameters) {
-    	// Send a post request to a targetURL, with a body of urlParameters
-    	URL url;
-    	HttpURLConnection connection = null;
-    	try {
-    		url = new URL(targetURL);
-    		connection = (HttpURLConnection)url.openConnection();
-    		connection.setRequestMethod("POST");
-    		connection.setRequestProperty("Content-Type", "application/json");
-    		connection.setRequestProperty("Content-Length", ""+ Integer.toString(urlParameters.getBytes().length));
-    		connection.setRequestProperty("Content-Language", "en-US");
-    		
-    		connection.setUseCaches(false);
-    		connection.setDoInput(true);
-    		connection.setDoOutput(true);
-    		
-    		// Send request
-    		DataOutputStream sendRequest = new DataOutputStream(connection.getOutputStream());
-    		sendRequest.writeBytes(urlParameters);
-    		sendRequest.flush();
-    		sendRequest.close();
-    		
-    		
-    		// Read response
-    		InputStream inStream = connection.getInputStream();
-    		BufferedReader reader = new BufferedReader(new InputStreamReader(inStream));
-    		String line;
-    		StringBuffer response = new StringBuffer();
-    		while((line= reader.readLine()) != null) {
-    			response.append(line);
-    			response.append('\r');
-    		}
-    		reader.close();
-    		return response.toString();
-    	}
-    	catch(Exception e) {
-    		e.printStackTrace();
-    		return null;
-    	}
-    	finally {
-    		if(connection != null) {
-    			connection.disconnect();
-    		}
-    	}
 
-    }
+	public String jsonPostRequest(String requestURL, String jsonBody) {
+		// Declare url
+		URL url;
+		HttpURLConnection conn = null;
+		try {
+			url = new URL (requestURL);
+			// Open connection to url
+			conn = (HttpURLConnection)url.openConnection();
+			// Set the request method to send information to the URL
+			conn.setRequestMethod("POST");
+			conn.setRequestProperty("Content-Type", "application/json; utf-8");
+			conn.setRequestProperty("Accept", "application/json");
+
+			// enable requests
+			conn.setDoOutput(true);
+
+			// write request to url
+
+			OutputStream outStream = conn.getOutputStream();
+			byte[] input = jsonBody.getBytes("utf-8");
+			outStream.write(input, 0, input.length);
+
+			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
+			StringBuilder resp = new StringBuilder();
+			String responseLine = null;
+			while((responseLine = br.readLine()) != null) {
+				resp.append(responseLine.trim());
+			}
+			return(resp.toString());
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		finally {
+			if(conn!= null) {
+				conn.disconnect();
+			}
+		}
+	}
+
+	public static String jsonGetRequest(String urlToRead) {
+		try {
+			StringBuilder result = new StringBuilder();
+			URL url = new URL(urlToRead);
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("GET");
+			BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+			String line;
+			while ((line = rd.readLine()) != null) {
+				result.append(line);
+			}
+			rd.close();
+
+			JSONObject j = new JSONObject(result.toString());
+			j = (JSONObject) j.get("slots");
+
+			return (String) j.get("agent_type");
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
 }
-
